@@ -74,37 +74,37 @@ export class ChatService {
   }
 
   // Adds a text or image message to Cloud Firestore.
-  addMessage = async (
-    textMessage: string | null,
-    imageUrl: string | null
-  ): Promise<void | DocumentReference<DocumentData>> => {
+  addMessage = async(textMessage: string | null, imageUrl: string | null): Promise<void | DocumentReference<DocumentData>> => {
     let data: any;
     try {
-      this.user$.subscribe(async (user) => {
-        if (textMessage && textMessage.length > 0) {
-          data = await addDoc(collection(this.firestore, 'messages'), {
+      this.user$.subscribe(async (user) => 
+      { 
+        if(textMessage && textMessage.length > 0) {
+          data =  await addDoc(collection(this.firestore, 'messages'), {
             name: user?.displayName,
             text: textMessage,
             profilePicUrl: user?.photoURL,
             timestamp: serverTimestamp(),
             uid: user?.uid
-          });
-        } else if (imageUrl && imageUrl.length > 0) {
-          data = await addDoc(collection(this.firestore, 'messages'), {
-            name: user?.displayName,
-            imageUrl: imageUrl,
-            profilePicUrl: user?.photoURL,
-            timestamp: serverTimestamp(),
-            uid: user?.uid
-          });
+          })}
+          else if (imageUrl && imageUrl.length > 0) {
+            data =  await addDoc(collection(this.firestore, 'messages'), {
+              name: user?.displayName,
+              imageUrl: imageUrl,
+              profilePicUrl: user?.photoURL,
+              timestamp: serverTimestamp(),
+              uid: user?.uid
+            });
+          }
+          return data;
         }
-        return data;
-      })
-    } catch(error) {
-      console.log('Error writing new message to Firebase Database', error);
+      );
+    }
+    catch(error) {
+      console.error('Error writing new message to Firebase Database', error);
       return;
     }
-  };
+  }
 
   // Saves a new message to Cloud Firestore.
   saveTextMessage = async (messageText: string) => {
@@ -113,12 +113,36 @@ export class ChatService {
 
   // Loads chat messages history and listens for upcoming ones.
   loadMessages = () => {
-    return null as unknown;
+    // Create the query to load the last 12 messages and listen for new ones.
+    const recentMessagesQuery = query(collection(this.firestore, 'messages'), orderBy('timestamp', 'desc'), limit(12));
+    // Start listening to the query.
+    return collectionData(recentMessagesQuery);
   };
 
   // Saves a new message containing an image in Firebase.
   // This first saves the image in Firebase storage.
-  saveImageMessage = async (file: any) => {};
+  saveImageMessage = async (file: any) => {
+    try {
+      // 1 - You add a message with a loading icon that will get updated with the shared image.
+      const messageRef = await this.addMessage(null, this.LOADING_IMAGE_URL);
+
+      // 2 - Upload the image to Cloud Storage.
+      const filePath = `${this.auth.currentUser?.uid}/${file.name}}`;
+      const newImageRef = ref(this.storage, filePath);
+      const fileSnapshot = await uploadBytesResumable(newImageRef, file);
+
+      // 3 - Generate a public URL for the file
+      const publicImageUrl = await getDownloadURL(newImageRef);
+
+      // 4 - Update the chat message placeholder with the image's URL.
+      messageRef ? await updateDoc(messageRef, {
+        imageUrl: publicImageUrl,
+        storageUri: fileSnapshot.metadata.fullPath
+      }) : null;
+    } catch(error) {
+      console.error('There was an error uploading a file to Cloud Storage: ', error);
+    }
+  };
 
   async updateData(path: string, data: any) {}
 

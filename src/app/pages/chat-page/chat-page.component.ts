@@ -15,7 +15,8 @@ export class ChatPageComponent {
   text = '';
 
   sendTextMessage() {
-    this.chatService.saveTextMessage(this.text);
+    // change sendTextMessage to addMessage.
+    this.chatService.addMessage(this.text, null);
     this.text = '';
   }
 
