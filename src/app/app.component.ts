@@ -7,7 +7,5 @@ import { Firestore } from '@angular/fire/firestore';
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  firestore: Firestore = inject(Firestore);
   title = 'friendlychat';
-  
 }
