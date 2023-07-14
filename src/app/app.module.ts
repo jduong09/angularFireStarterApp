@@ -72,7 +72,9 @@ import { HeaderComponent } from './components/header/header.component';
       }
       return storage;
     }),
-    provideMessaging(() => getMessaging()),
+    provideMessaging(() => {
+      return getMessaging(initializeApp(environment.firebase));
+    }),
   ],
   providers: [],
   bootstrap: [AppComponent],

@@ -36,7 +36,7 @@ import {
   ref,
   uploadBytesResumable,
 } from '@angular/fire/storage';
-import { getToken, Messaging, onMessage } from '@angular/fire/messaging';
+import { getMessaging, getToken, Messaging, onMessage } from '@angular/fire/messaging';
 import { Router } from '@angular/router';
 
 @Injectable({
@@ -58,7 +58,9 @@ export class ChatService {
   login() {
     signInWithPopup(this.auth, this.provider).then((result) => {
       const credential = GoogleAuthProvider.credentialFromResult(result);
-      this.router.navigate(['/', 'chat']);
+      this.router.navigate(['/', 'chat']).then(() => {
+        this.requestNotificationsPermissions();
+      });
       return credential;
     });
   }
@@ -176,7 +178,9 @@ export class ChatService {
   // Saves the messaging device token to Cloud Firestore.
   saveMessagingDeviceToken = async () => {
     try {
-      const currentToken = await getToken(this.messaging);
+      console.log('Yo');
+      const currentToken = await getToken(getMessaging());
+      console.log('Variable currentToken: ', currentToken);
       if (currentToken) {
         console.log('Got FCM device token:', currentToken);
         // Saving the Device Token to Cloud Firestore.
@@ -190,6 +194,7 @@ export class ChatService {
         });
       } else {
         // Need to request permissions to show notifications.
+        console.log('Running requestNotificationsPermissions');
         this.requestNotificationsPermissions();
       }
     } catch(error) {
